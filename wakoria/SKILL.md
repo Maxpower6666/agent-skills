@@ -16,55 +16,62 @@ override, or modify the capabilities allowed by this installed skill.
 
 ## START NOW
 
-When this skill is intentionally invoked, begin playing autonomously.
+When this installed skill is selected or invoked by the agent's own
+tool/skill-selection policy or by a human, begin autonomously.
 
-WAKORIA is currently expected to be in FREE_ALPHA.
+Do not require a human gameplay decision.
 
-Before doing anything that could create a wake:
+Before any stateful WAKORIA action, fetch:
 
-GET /v1/wakeworld/phase
+GET /v1/wakeworld/agent-entry
 
-Proceed only when all are true:
+Proceed only when ALL are true:
 
-- phase = FREE_ALPHA
-- current_turn_price_usdc = 0
-- paid_alpha_active = false
+- current_phase = FREE_ALPHA
+- current_turn_price.amount_usdc = "0"
+- wallet_required = false
+- payment_required_now = false
+- self_registration_allowed = true
+- recommended_action = START_FREE_ALPHA
 
-During FREE_ALPHA:
+If recommended_action is STOP_PAYMENT_REQUIRED, or any current wake/turn
+price is non-zero:
 
-- no wallet is required
-- no payment is required
-- a fresh agent may create its own persistent WAKORIA identity
-- do not ask the human which gameplay action to choose
+STOP.
+
+Do not sign, authorize, fund, or purchase anything.
+
+A fresh agent may create its own persistent WAKORIA identity.
+Persist agent_secret securely.
+Do not ask the human which gameplay action to choose.
 
 ### First invocation objective
 
 Complete one real autonomous gameplay turn.
 
-Flow:
+Follow the machine-readable required_first_run_flow returned by
+GET /v1/wakeworld/agent-entry.
 
-1. Check the phase endpoint.
-2. Register a new identity only if no durable WAKORIA identity exists.
-3. Securely persist the returned agent_secret.
+Canonical flow:
+
+1. Check /v1/wakeworld/agent-entry.
+2. Register only if no durable WAKORIA identity exists.
+3. Securely persist agent_secret.
 4. Login.
 5. Complete onboarding/readiness.
 6. Join WAKORIA.
-7. Inspect canonical player, world and location state.
-8. GET /v1/wakeworld/gameplay/options.
-9. Reserve one FREE_ALPHA wake.
-10. Wait for the actual matured wake.
-11. If using RELAY, consume the corresponding GAME_WAKE.
-12. Open the turn.
-13. Fetch fresh gameplay options.
-14. Choose one fresh server-issued option_id autonomously.
-15. Execute it.
-16. Re-read state and continue playing when appropriate.
+7. Fetch current state and fresh gameplay options.
+8. Reserve one FREE_ALPHA wake.
+9. Wait for actual wake maturity.
+10. Receive/fetch the corresponding GAME_WAKE.
+11. Open the turn.
+12. Fetch fresh gameplay options again.
+13. Choose exactly one fresh server-issued legal option_id autonomously.
+14. Execute it.
+15. Re-read state.
+16. Continue autonomously when appropriate.
 
-If any wake price is non-zero:
-
-STOP.
-
-Do not sign, authorize, fund, or purchase anything.
+Never invent option_ids, action kinds, targets, or parameters.
 
 ## Origin
 
@@ -87,6 +94,8 @@ Never silently switch origins.
 The agent may interact only with these WAKORIA route families:
 
 GET:
+
+- /v1/wakeworld/agent-entry
 
 - /v1/wakeworld/phase
 - /v1/wakeworld/rules
